@@ -8,15 +8,17 @@ function PerfilTrabajador() {
   const [cargando, setCargando] = useState(true);
   const [mostrarCentinela, setMostrarCentinela] = useState(false);
 
-  // Función para leer y transformar el archivo CSV descargado de Centinela
+  // Función para leer y transformar el archivo CSV de Centinela limpiando caracteres invisibles
   const procesarCSV = (texto) => {
     const lineas = texto.split('\n');
     const resultado = [];
     for (let i = 1; i < lineas.length; i++) {
       const columnas = lineas[i].split(';');
       if (columnas.length >= 8) {
+        // Limpiamos cualquier carácter invisible o BOM del RUT
+        const rutLimpio = columnas[0].trim().replace(/^\ufeff/, '');
         resultado.push({
-          rut: columnas[0].trim(),
+          rut: rutLimpio,
           nombre: columnas[1].trim(),
           estado: columnas[2].trim(),
           renovacion: columnas[6].trim(),
@@ -43,9 +45,9 @@ function PerfilTrabajador() {
         setCursos(misCursos);
 
         // 2. Cargar datos de Campus Centinela (CSV desde Dropbox)
-        const linkCSV = 'https://www.dropbox.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=1t4ec9lf&dl=0';
+        const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=uvva10p1'; // Reemplaza con tu enlace de Dropbox (sin dl=0)
        
-        if (linkCSV !== 'https://www.dropbox.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=1t4ec9lf&dl=0') {
+        if (linkCSV !== 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=uvva10p1') {
             const resCSV = await fetch(linkCSV);
             const textoCSV = await resCSV.text();
             localStorage.setItem('bd_centinela', textoCSV);
