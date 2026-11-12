@@ -9,25 +9,33 @@ function PerfilTrabajador() {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        // 1. Intenta descargar la base de datos de Dropbox
         const respuesta = await fetch('https://dl.dropboxusercontent.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=z666jrvc');
         const bd = await respuesta.json();
-        
-        // 2. Guarda la copia de seguridad
+       
         localStorage.setItem('bd_trabajadores', JSON.stringify(bd));
-        
-        // 3. Filtra usando el RUT
-        const misCursos = bd.filter(curso => curso.Identificador && curso.Identificador.includes(rut));
+       
+        // Buscamos al trabajador (en minúscula, como lo guarda Power Automate)
+        const trabajador = bd.find(t => t.identificador && t.identificador.includes(rut));
+       
+        let misCursos = [];
+        // Extraemos los cursos y aplanamos la doble lista
+        if (trabajador && trabajador.cursos && trabajador.cursos.length > 0) {
+          misCursos = trabajador.cursos.flat();
+        }
+       
         setCursos(misCursos);
         setCargando(false);
-        
+       
       } catch (error) {
         console.error("Sin internet: Usando base de datos offline");
-        // 4. Si no hay internet, lee la memoria local
         const bdTexto = localStorage.getItem('bd_trabajadores');
         if (bdTexto) {
           const bd = JSON.parse(bdTexto);
-          const misCursos = bd.filter(curso => curso.Identificador && curso.Identificador.includes(rut));
+          const trabajador = bd.find(t => t.identificador && t.identificador.includes(rut));
+          let misCursos = [];
+          if (trabajador && trabajador.cursos && trabajador.cursos.length > 0) {
+            misCursos = trabajador.cursos.flat();
+          }
           setCursos(misCursos);
         }
         setCargando(false);
@@ -63,7 +71,7 @@ function PerfilTrabajador() {
         <hr style={{ border: '1px solid #e6e6e6', margin: '20px 0' }} />
 
         <h3 style={{ color: '#333333' }}>Cursos Aprobados ({cursos.length})</h3>
-        
+       
         {cursos.length === 0 ? (
           <p style={{ color: '#000000', fontWeight: 'bold' }}>No se encontraron cursos vigentes para este trabajador.</p>
         ) : (
@@ -73,7 +81,7 @@ function PerfilTrabajador() {
               <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
                 Vencimiento: {curso.FechaVencimiento.substring(0, 2)}/{curso.FechaVencimiento.substring(2, 4)}/{curso.FechaVencimiento.substring(4)}
               </p>
-              <button 
+              <button
                 onClick={() => handleVerCertificado(curso.Enlace)}
                 style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
