@@ -43,9 +43,9 @@ function PerfilTrabajador() {
         setCursos(misCursos);
 
         // 2. Cargar datos de Campus Centinela (CSV desde Dropbox)
-        const linkCSV = 'AQUI_TU_LINK_DROPBOX_CSV';
+        const linkCSV = 'https://www.dropbox.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=1t4ec9lf&dl=0';
        
-        if (linkCSV !== 'AQUI_TU_LINK_DROPBOX_CSV') {
+        if (linkCSV !== 'https://www.dropbox.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=1t4ec9lf&dl=0') {
             const resCSV = await fetch(linkCSV);
             const textoCSV = await resCSV.text();
             localStorage.setItem('bd_centinela', textoCSV);
