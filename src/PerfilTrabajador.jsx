@@ -142,9 +142,15 @@ function PerfilTrabajador() {
           cursos.map((c, i) => (
             <div key={i} style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '10px', borderLeft: '4px solid #333333' }}>
               <h4 style={{ margin: '0 0 5px 0' }}>{c.NombreCurso}</h4>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#666666' }}>
                 Vencimiento: {c.FechaVencimiento ? `${c.FechaVencimiento.substring(0, 2)}/${c.FechaVencimiento.substring(2, 4)}/${c.FechaVencimiento.substring(4)}` : 'N/A'}
               </p>
+              
+              {/* Aquí se añadió la línea nueva de Vigencia para OTEC */}
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
+                Vigencia: <strong style={{ color: '#333333' }}>{c.Vigencia || c.Estado || c.Vigente || 'Dato no disponible'}</strong>
+              </p>
+
               <button 
                 onClick={() => handleVerCertificado(c.Enlace)}
                 style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
