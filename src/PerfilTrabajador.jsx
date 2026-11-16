@@ -64,9 +64,9 @@ function PerfilTrabajador() {
         if (trabajador && trabajador.cursos) setCursos(trabajador.cursos.flat());
 
         // Cargar Centinela (REEMPLAZA AQUÍ TU ENLACE)
-        const linkCSV = 'https://www.dropbox.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz&dl=0';
+        const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz';
         
-        if (linkCSV !== 'https://www.dropbox.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz&dl=0') {
+        if (linkCSV !== 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz') {
             const resCSV = await fetch(linkCSV);
             if (!resCSV.ok) throw new Error("Error HTTP al descargar CSV");
             
