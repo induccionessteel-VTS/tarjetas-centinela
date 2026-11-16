@@ -9,6 +9,38 @@ function PerfilTrabajador() {
   const [mostrarCentinela, setMostrarCentinela] = useState(false);
   const [diagnostico, setDiagnostico] = useState("");
 
+  // Motor de cálculo de vigencia
+  const calcularVigencia = (fechaString) => {
+    if (!fechaString || fechaString.length !== 8) {
+      return { texto: 'Dato no disponible', color: '#666666' };
+    }
+    
+    // Extraer Día, Mes y Año del formato DDMMYYYY
+    const dia = parseInt(fechaString.substring(0, 2), 10);
+    const mes = parseInt(fechaString.substring(2, 4), 10) - 1; // En JavaScript los meses van de 0 a 11
+    const anio = parseInt(fechaString.substring(4), 10);
+    
+    const fechaVencimiento = new Date(anio, mes, dia);
+    const hoy = new Date();
+    
+    // Limpiar las horas para comparar solo los días exactos
+    hoy.setHours(0, 0, 0, 0);
+    fechaVencimiento.setHours(0, 0, 0, 0);
+    
+    // Calcular diferencia en milisegundos y pasar a días
+    const diferenciaTiempo = fechaVencimiento.getTime() - hoy.getTime();
+    const diferenciaDias = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
+    
+    // Reglas de negocio
+    if (diferenciaDias < 0) {
+      return { texto: 'VENCIDO', color: '#000000' };
+    } else if (diferenciaDias <= 50) {
+      return { texto: `POR VENCER (en ${diferenciaDias} días)`, color: '#FF6600' };
+    } else {
+      return { texto: 'AL DÍA', color: '#333333' };
+    }
+  };
+
   const procesarCSV = (texto, rutBuscado) => {
     if (texto.includes("<!DOCTYPE html>") || texto.includes("<html")) {
       setDiagnostico("❌ ERROR: El enlace de Dropbox está abriendo una página web. Debes asegurarte de que empiece con dl.dropboxusercontent.com y no con www.dropbox.com");
@@ -110,7 +142,6 @@ function PerfilTrabajador() {
     cargarDatos();
   }, [rut]);
 
-  // Manejador para abrir el certificado en modo online y avisar en offline
   const handleVerCertificado = (url_pdf) => {
     if (navigator.onLine) {
       window.open(url_pdf, '_blank');
@@ -139,26 +170,31 @@ function PerfilTrabajador() {
         {cursos.length === 0 ? (
           <p>No se encontraron cursos OTEC.</p>
         ) : (
-          cursos.map((c, i) => (
-            <div key={i} style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '10px', borderLeft: '4px solid #333333' }}>
-              <h4 style={{ margin: '0 0 5px 0' }}>{c.NombreCurso}</h4>
-              <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#666666' }}>
-                Vencimiento: {c.FechaVencimiento ? `${c.FechaVencimiento.substring(0, 2)}/${c.FechaVencimiento.substring(2, 4)}/${c.FechaVencimiento.substring(4)}` : 'N/A'}
-              </p>
-              
-              {/* Aquí se añadió la línea nueva de Vigencia para OTEC */}
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
-                Vigencia: <strong style={{ color: '#333333' }}>{c.Vigencia || c.Estado || c.Vigente || 'Dato no disponible'}</strong>
-              </p>
+          cursos.map((c, i) => {
+            // Evaluamos la vigencia para este curso específico
+            const estadoVigencia = calcularVigencia(c.FechaVencimiento);
+            
+            return (
+              <div key={i} style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '10px', borderLeft: '4px solid #333333' }}>
+                <h4 style={{ margin: '0 0 5px 0' }}>{c.NombreCurso}</h4>
+                <p style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#666666' }}>
+                  Vencimiento: {c.FechaVencimiento ? `${c.FechaVencimiento.substring(0, 2)}/${c.FechaVencimiento.substring(2, 4)}/${c.FechaVencimiento.substring(4)}` : 'N/A'}
+                </p>
+                
+                {/* Visualización dinámica del cálculo de vigencia */}
+                <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
+                  Vigencia: <strong style={{ color: estadoVigencia.color }}>{estadoVigencia.texto}</strong>
+                </p>
 
-              <button 
-                onClick={() => handleVerCertificado(c.Enlace)}
-                style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                Ver Certificado
-              </button>
-            </div>
-          ))
+                <button 
+                  onClick={() => handleVerCertificado(c.Enlace)}
+                  style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Ver Certificado
+                </button>
+              </div>
+            );
+          })
         )}
 
         <hr style={{ border: '1px solid #e6e6e6', margin: '20px 0' }} />
