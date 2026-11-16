@@ -78,7 +78,28 @@ function PerfilTrabajador() {
       } catch (error) {
         setDiagnostico("❌ ERROR DE CONEXIÓN OTEC: " + error.message);
         
-        // Intento offline
+        // Intento offline OTEC
+        const bdTexto = localStorage.getItem('bd_trabajadores');
+        if (bdTexto) {
+          const bdJSON = JSON.parse(bdTexto);
+          const rutLimpioBuscado = rut.trim().replace(/[^0-9kK]/g, '').toLowerCase();
+          
+          const trabajadoresMatch = bdJSON.filter(t => {
+            if (!t.identificador) return false;
+            const rutJsonLimpio = String(t.identificador).replace(/[^0-9kK]/g, '').toLowerCase();
+            return rutJsonLimpio === rutLimpioBuscado || t.identificador.includes(rut);
+          });
+          
+          let misCursosOtec = [];
+          trabajadoresMatch.forEach(t => { 
+            if (t.cursos && t.cursos.length > 0) {
+              misCursosOtec = misCursosOtec.concat(t.cursos.flat());
+            }
+          });
+          setCursos(misCursosOtec);
+        }
+        
+        // Intento offline Centinela
         const csvTexto = localStorage.getItem('bd_centinela');
         if (csvTexto) setCursosCentinela(procesarCSV(csvTexto, rut));
       } finally {
