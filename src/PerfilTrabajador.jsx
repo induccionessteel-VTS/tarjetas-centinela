@@ -10,15 +10,12 @@ function PerfilTrabajador() {
   const [diagnostico, setDiagnostico] = useState("");
 
   const procesarCSV = (texto, rutBuscado) => {
-    // 1. Verificar si Dropbox mandó una página web en vez del CSV
     if (texto.includes("<!DOCTYPE html>") || texto.includes("<html")) {
       setDiagnostico("❌ ERROR: El enlace de Dropbox está abriendo una página web. Debes asegurarte de que empiece con dl.dropboxusercontent.com y no con www.dropbox.com");
       return [];
     }
 
-    // 2. Detectar automáticamente si Microsoft guardó el CSV con comas o puntos y comas
     const separador = texto.includes(";") ? ";" : ",";
-    
     const lineas = texto.split('\n');
     const resultado = [];
     const rutLimpioBuscado = rutBuscado.trim().replace(/[^0-9kK]/g, '').toLowerCase();
@@ -46,7 +43,7 @@ function PerfilTrabajador() {
     if (resultado.length === 0) {
       setDiagnostico(`⚠️ LECTURA EXITOSA: El CSV tiene ${lineas.length} filas y usa separador "${separador}", pero no encontró ninguna coincidencia para el RUT ${rutBuscado}.`);
     } else {
-      setDiagnostico(""); // Todo bien, se oculta el mensaje
+      setDiagnostico(""); 
     }
 
     return resultado;
@@ -79,7 +76,7 @@ function PerfilTrabajador() {
         }
         
       } catch (error) {
-        setDiagnostico("❌ ERROR DE CONEXIÓN: No se pudo descargar el archivo de Dropbox. Revisa que el enlace contenga el '?rlkey=...' correcto.");
+        setDiagnostico("❌ ERROR DE CONEXIÓN OTEC: " + error.message);
         
         // Intento offline
         const csvTexto = localStorage.getItem('bd_centinela');
@@ -92,12 +89,20 @@ function PerfilTrabajador() {
     cargarDatos();
   }, [rut]);
 
+  // Manejador para abrir el certificado en modo online y avisar en offline
+  const handleVerCertificado = (url_pdf) => {
+    if (navigator.onLine) {
+      window.open(url_pdf, '_blank');
+    } else {
+      alert("Sin conexión: El certificado físico no se puede descargar en faena, pero la competencia está validada en el sistema.");
+    }
+  };
+
   if (cargando) return <div style={{ padding: '20px' }}><h2>Sincronizando base de datos STEEL...</h2></div>;
 
   return (
     <div style={{ backgroundColor: '#f2f2f2', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       
-      {/* PANEL DE DIAGNÓSTICO */}
       {diagnostico && (
         <div style={{ backgroundColor: '#ffe6e6', border: '2px solid red', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#cc0000', fontWeight: 'bold' }}>
           {diagnostico}
@@ -110,11 +115,24 @@ function PerfilTrabajador() {
         <hr style={{ border: '1px solid #e6e6e6', margin: '20px 0' }} />
 
         <h3 style={{ color: '#333333' }}>Cursos OTEC ({cursos.length})</h3>
-        {cursos.length === 0 ? <p>No se encontraron cursos OTEC.</p> : cursos.map((c, i) => (
-          <div key={i} style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '10px', borderLeft: '4px solid #333333' }}>
-            <h4 style={{ margin: '0 0 5px 0' }}>{c.NombreCurso}</h4>
-          </div>
-        ))}
+        {cursos.length === 0 ? (
+          <p>No se encontraron cursos OTEC.</p>
+        ) : (
+          cursos.map((c, i) => (
+            <div key={i} style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '5px', marginBottom: '10px', borderLeft: '4px solid #333333' }}>
+              <h4 style={{ margin: '0 0 5px 0' }}>{c.NombreCurso}</h4>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
+                Vencimiento: {c.FechaVencimiento ? `${c.FechaVencimiento.substring(0, 2)}/${c.FechaVencimiento.substring(2, 4)}/${c.FechaVencimiento.substring(4)}` : 'N/A'}
+              </p>
+              <button 
+                onClick={() => handleVerCertificado(c.Enlace)}
+                style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Ver Certificado
+              </button>
+            </div>
+          ))
+        )}
 
         <hr style={{ border: '1px solid #e6e6e6', margin: '20px 0' }} />
 
