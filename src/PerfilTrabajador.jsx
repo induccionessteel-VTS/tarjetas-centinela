@@ -8,22 +8,33 @@ function PerfilTrabajador() {
   const [cargando, setCargando] = useState(true);
   const [mostrarCentinela, setMostrarCentinela] = useState(false);
 
-  // Función para leer y transformar el archivo CSV de Centinela limpiando caracteres invisibles
-  const procesarCSV = (texto) => {
+  // Función ultra robusta para limpiar y comparar RUTs y columnas
+  const procesarCSV = (texto, rutBuscado) => {
     const lineas = texto.split('\n');
     const resultado = [];
+    
+    // Limpiamos el RUT que buscamos (dejamos solo números y letras para evitar problemas de guiones/puntos)
+    const rutLimpioBuscado = rutBuscado.trim().replace(/[^0-9kK]/g, '').toLowerCase();
+
     for (let i = 1; i < lineas.length; i++) {
-      const columnas = lineas[i].split(';');
+      const linea = lineas[i].trim();
+      if (!linea) continue;
+      
+      const columnas = linea.split(';');
       if (columnas.length >= 8) {
-        // Limpiamos cualquier carácter invisible o BOM del RUT
-        const rutLimpio = columnas[0].trim().replace(/^\ufeff/, '');
-        resultado.push({
-          rut: rutLimpio,
-          nombre: columnas[1].trim(),
-          estado: columnas[2].trim(),
-          renovacion: columnas[6].trim(),
-          estadoVigencia: columnas[7].trim()
-        });
+        const rutCrudo = columnas[0].trim().replace(/^\ufeff/, '');
+        const rutFilaLimpio = rutCrudo.replace(/[^0-9kK]/g, '').toLowerCase();
+
+        // Si el RUT coincide (o contiene la parte principal)
+        if (rutFilaLimpio === rutLimpioBuscado || rutCrudo.includes(rutBuscado)) {
+          resultado.push({
+            rut: rutCrudo,
+            nombre: columnas[1].trim(),
+            estado: columnas[2].trim(),
+            renovacion: columnas[6] ? columnas[6].trim() : 'N/A',
+            estadoVigencia: columnas[7] ? columnas[7].trim() : 'N/A'
+          });
+        }
       }
     }
     return resultado;
@@ -32,49 +43,48 @@ function PerfilTrabajador() {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        // 1. Cargar datos de Cursos OTEC (JSON)
+        // 1. Cargar datos OTEC (JSON)
         const resJSON = await fetch('https://dl.dropboxusercontent.com/scl/fi/k4pcikhb2t9kvogzypzhq/trabajadores.json?rlkey=f8k02a04i0n2blrx3qonv5rsc&st=z666jrvc');
         const bdJSON = await resJSON.json();
         localStorage.setItem('bd_trabajadores', JSON.stringify(bdJSON));
-       
+        
         const trabajador = bdJSON.find(t => t.identificador && t.identificador.includes(rut));
         let misCursos = [];
         if (trabajador && trabajador.cursos && trabajador.cursos.length > 0) {
-          misCursos = trabajador.cursos.flat();
+          misCursos = trabajador.cursos.flat(); 
         }
         setCursos(misCursos);
 
-        // 2. Cargar datos de Campus Centinela (CSV desde Dropbox)
-        const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=uvva10p1'; // Reemplaza con tu enlace de Dropbox (sin dl=0)
-       
-        if (linkCSV !== 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=uvva10p1') {
+        // 2. Cargar datos Campus Centinela (CSV desde Dropbox)
+        const linkCSV = 'https://www.dropbox.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz&dl=0'; // Reemplaza con tu enlace limpio de Dropbox
+        
+        if (linkCSV !== 'https://www.dropbox.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz&dl=0') {
             const resCSV = await fetch(linkCSV);
             const textoCSV = await resCSV.text();
             localStorage.setItem('bd_centinela', textoCSV);
-           
-            const todosCentinela = procesarCSV(textoCSV);
-            const misCursosCentinela = todosCentinela.filter(c => c.rut === rut);
+            
+            const misCursosCentinela = procesarCSV(textoCSV, rut);
             setCursosCentinela(misCursosCentinela);
         }
-       
+        
         setCargando(false);
-       
+        
       } catch (error) {
-        console.error("Sin internet: Usando bases de datos offline");
-       
+        console.error("Sin internet: Usando bases de datos offline", error);
+        
         const bdTexto = localStorage.getItem('bd_trabajadores');
         if (bdTexto) {
           const bdJSON = JSON.parse(bdTexto);
           const trabajador = bdJSON.find(t => t.identificador && t.identificador.includes(rut));
           if (trabajador && trabajador.cursos) setCursos(trabajador.cursos.flat());
         }
-       
+        
         const csvTexto = localStorage.getItem('bd_centinela');
         if (csvTexto) {
-          const todosCentinela = procesarCSV(csvTexto);
-          setCursosCentinela(todosCentinela.filter(c => c.rut === rut));
+          const misCursosCentinela = procesarCSV(csvTexto, rut);
+          setCursosCentinela(misCursosCentinela);
         }
-       
+        
         setCargando(false);
       }
     };
@@ -117,7 +127,7 @@ function PerfilTrabajador() {
               <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666666' }}>
                 Vencimiento: {curso.FechaVencimiento.substring(0, 2)}/{curso.FechaVencimiento.substring(2, 4)}/{curso.FechaVencimiento.substring(4)}
               </p>
-              <button
+              <button 
                 onClick={() => handleVerCertificado(curso.Enlace)}
                 style={{ backgroundColor: '#FF6600', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
               >
@@ -130,8 +140,8 @@ function PerfilTrabajador() {
         <hr style={{ border: '1px solid #e6e6e6', margin: '20px 0' }} />
 
         <h3 style={{ color: '#333333' }}>Cursos Campus Centinela ({cursosCentinela.length})</h3>
-       
-        <button
+        
+        <button 
           onClick={() => setMostrarCentinela(!mostrarCentinela)}
           style={{ backgroundColor: '#333333', color: '#ffffff', border: 'none', padding: '10px 15px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: '100%', marginBottom: '15px' }}
         >
