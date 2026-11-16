@@ -61,7 +61,7 @@ function PerfilTrabajador() {
         if (trabajador && trabajador.cursos) setCursos(trabajador.cursos.flat());
 
         // Cargar Centinela
-        const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz';
+        const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=jegicear';
         
         try {
             const resCSV = await fetch(linkCSV);
