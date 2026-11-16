@@ -63,10 +63,10 @@ function PerfilTrabajador() {
         const trabajador = bdJSON.find(t => t.identificador && t.identificador.includes(rut));
         if (trabajador && trabajador.cursos) setCursos(trabajador.cursos.flat());
 
-        // Cargar Centinela (REEMPLAZA AQUÍ TU ENLACE)
+        // Cargar Centinela
         const linkCSV = 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz';
         
-        if (linkCSV !== 'https://dl.dropboxusercontent.com/scl/fi/vm12c2l30i2ics3jhorlq/cursos_centinela_fijo.csv?rlkey=al72qquv2n5c2jgt201kpml5i&st=919wgnpz') {
+        try {
             const resCSV = await fetch(linkCSV);
             if (!resCSV.ok) throw new Error("Error HTTP al descargar CSV");
             
@@ -74,8 +74,8 @@ function PerfilTrabajador() {
             localStorage.setItem('bd_centinela', textoCSV);
             const misCursosCentinela = procesarCSV(textoCSV, rut);
             setCursosCentinela(misCursosCentinela);
-        } else {
-            setDiagnostico("❌ ERROR: Aún no has pegado el enlace de Dropbox en el código.");
+        } catch (error) {
+            setDiagnostico("❌ ERROR DE CONEXIÓN: No se pudo descargar el archivo de Dropbox. Revisa que el enlace contenga el '?rlkey=...' correcto.");
         }
         
       } catch (error) {
